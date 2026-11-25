@@ -18,7 +18,6 @@
 | **Docs URL** | `https://privatools.me/mcp` |
 | **Privacy Policy URL** | `https://privatools.me/privacy` |
 | **Security Policy URL** | `https://privatools.me/security` |
-| **Support Contact** | `hello@privatools.me` · `https://privatools.me/support` |
 | **Support URL (MCP Issues)** | `https://github.com/ethereaglehq/privatools-mcp/issues` |
 | **Source Repository (MCP Client)** | `https://github.com/ethereaglehq/privatools-mcp` |
 | **OpenAPI Reference** | `https://api.privatools.me/api/v1/openapi.json` |
@@ -56,7 +55,7 @@ Instead of flooding an agent's context window with tens of thousands of tokens o
 1. **`privatools_list_tools`** *(read-only)* — Search and filter `/api/v1` operations by keyword (`query`), `category`, or execution `mode` (`sync` / `async`), backed by the live `/api/v1/operations` catalog with a bundled offline fallback.
 2. **`privatools_describe_tool`** *(read-only)* — Inspect exact endpoint path, HTTP method, multipart upload field names, parameters, constraints, cost units, async support, and response media types before running an operation.
 3. **`privatools_run_tool`** *(sync execution)* — Execute any synchronous `/api/v1/<operation>` endpoint against local file(s) and parameters. Binary outputs stream directly to local disk (never clobbering existing files unless `overwrite: true`) and return concise metadata + `X-*` headers instead of base64 blobs; JSON-returning tools (`accessibility-check`, `view-exif`, `remove-watermark/detect`, etc.) return JSON inline.
-4. **`privatools_submit_job`** *(async submit)* — Submit asynchronous background jobs (`POST /api/v1/jobs`) for heavy PDF workloads (`merge`, `compress`, `grayscale`, `pdf-to-text`) with automatic `Idempotency-Key` support. On the hosted remote endpoint (`https://api.privatools.me/mcp`), anonymous async jobs work without an API key using unguessable capability `job_id`s, the same per-format limits as sync, and `<= 1 hour` automatic retention (optional `X-API-Key` unlocks higher keyed quotas).
+4. **`privatools_submit_job`** *(async submit)* — Submit asynchronous background jobs (`POST /api/v1/jobs`) for heavy PDF workloads (`merge`, `compress`, `grayscale`, `pdf-to-text`) with automatic `Idempotency-Key` support. On the hosted remote endpoint (`https://api.privatools.me/mcp`), anonymous async jobs work without an API key starting with PrivaTools `v2.7.39` using 192-bit capability `job_id`s, the same per-format limits as sync, and `<= 1 hour` automatic retention (optional `X-API-Key` unlocks higher keyed quotas).
 5. **`privatools_job_status`** *(strictly read-only)* — Poll job progress (`action: "status"`) or download completed artifacts (`action: "download"`). Never mutates or deletes server-side state.
 6. **`privatools_delete_job`** *(destructive)* — Immediately delete a completed server-side job artifact or cancel a running asynchronous job (`destructiveHint: true`).
 

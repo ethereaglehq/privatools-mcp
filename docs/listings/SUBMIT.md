@@ -205,12 +205,12 @@ Sign in with a paid Anthropic account (Pro, Max, Ultra, Team Owner, or Enterpris
 | **Server Name (`<= 100` chars)** | `PrivaTools` *(10 chars)* |
 | **Slug** | `privatools` *(permanent once published)* |
 | **Remote MCP Endpoint URL** | `https://api.privatools.me/mcp` *(Streamable HTTP; dual-era MCP `2026-07-28` + legacy `<= 2025-11-25`)* |
-| **Authentication** | None required — works anonymously out of the box for both sync tools and anonymous async jobs (unguessable capability `job_id`s, same per-format limits as sync, `<= 1 h` automatic retention; optional `X-API-Key` unlocks higher keyed quotas) |
+| **Authentication** | None required — works anonymously out of the box for both sync tools and (starting with PrivaTools `v2.7.39`) anonymous async jobs (192-bit capability `job_id`s, same per-format limits as sync, `<= 1 h` automatic retention; optional `X-API-Key` unlocks higher keyed quotas) |
 | **One-Liner (`<= 200` chars)** | `Process PDFs, documents, images, audio, video, OCR, and archives via 140+ stateless privacy-first tools. No account or API key needed; files auto-deleted after processing.` *(171 chars)* |
 | **Categories (1–5)** | Primary: `Productivity` · Recommended: `Productivity`, `Developer Tools`, `File Management` / `Document Processing`, `Utilities` |
 | **Documentation URL** | `https://privatools.me/mcp` *(OpenAPI: `https://api.privatools.me/api/v1/openapi.json`)* |
 | **Privacy Policy URL** | `https://privatools.me/privacy` |
-| **Support Contact** | `hello@privatools.me` · `https://privatools.me/support` *(MCP client issues: `https://github.com/ethereaglehq/privatools-mcp/issues`)* |
+| **Support Contact** | `https://github.com/ethereaglehq/privatools-mcp/issues` *(no email address, per owner preference)* |
 | **Icon File** | `docs/listings/assets/icon-512.png` *(`512×512` PNG)* |
 | **Company / Organization** | `PrivaTools` · `https://privatools.me` |
 | **Reads / Writes Separation** | Processes only user-supplied files/params and returns new outputs; never reads or modifies external user accounts. Read-only (`readOnlyHint: true`): `privatools_list_tools`, `privatools_describe_tool`, `privatools_job_status`. Non-destructive execution: `privatools_run_tool`, `privatools_submit_job`. Destructive (`destructiveHint: true`): `privatools_delete_job` only. |

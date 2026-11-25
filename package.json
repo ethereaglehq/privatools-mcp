@@ -1,0 +1,47 @@
+{
+  "name": "@privatools/mcp",
+  "version": "0.1.0",
+  "mcpName": "io.github.ethereaglehq/privatools",
+  "description": "Stateless MCP (Model Context Protocol) server for the PrivaTools file processing API.",
+  "type": "module",
+  "homepage": "https://privatools.me/mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethereaglehq/privatools-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ethereaglehq/privatools-mcp/issues"
+  },
+  "bin": {
+    "privatools-mcp": "./bin/privatools-mcp.mjs"
+  },
+  "exports": {
+    ".": "./src/protocol.mjs",
+    "./protocol": "./src/protocol.mjs",
+    "./client": "./src/client.mjs",
+    "./tools": "./src/tools.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check:mcpb": "node scripts/build-mcpb.mjs --check",
+    "build:mcpb": "node scripts/build-mcpb.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "data",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "privatools",
+    "pdf",
+    "ai-tools"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}

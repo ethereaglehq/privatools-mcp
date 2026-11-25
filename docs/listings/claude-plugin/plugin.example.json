@@ -1,0 +1,22 @@
+{
+  "name": "privatools",
+  "version": "0.1.0",
+  "description": "Stateless privacy-first PDF, image, document, and media processing tools via PrivaTools API.",
+  "author": {
+    "name": "PrivaTools",
+    "url": "https://privatools.me"
+  },
+  "homepage": "https://privatools.me/mcp",
+  "repository": "https://github.com/ethereaglehq/privatools-mcp",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "pdf",
+    "image",
+    "document",
+    "media",
+    "ocr",
+    "privacy"
+  ],
+  "mcpServers": "./mcp.example.json"
+}

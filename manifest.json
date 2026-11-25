@@ -1,0 +1,63 @@
+{
+  "manifest_version": "0.3",
+  "name": "privatools",
+  "display_name": "PrivaTools",
+  "version": "0.1.0",
+  "description": "Stateless privacy-first PDF, image, and document processing tools.",
+  "author": {
+    "name": "PrivaTools",
+    "url": "https://privatools.me"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethereaglehq/privatools-mcp.git"
+  },
+  "homepage": "https://privatools.me",
+  "documentation": "https://privatools.me/mcp",
+  "support": "https://github.com/ethereaglehq/privatools-mcp/issues",
+  "icon": "icon.png",
+  "license": "MIT",
+  "privacy_policies": [
+    "https://privatools.me/privacy"
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=20.0.0"
+    }
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "bin/privatools-mcp.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/bin/privatools-mcp.mjs"
+      ],
+      "env": {
+        "PRIVATOOLS_API_KEY": "${user_config.api_key}",
+        "PRIVATOOLS_MCP_ALLOWED_DIRS": "${user_config.allowed_dirs}"
+      }
+    }
+  },
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "PrivaTools API Key",
+      "description": "Optional API key from privatools.me for authenticated higher-quota access",
+      "sensitive": true,
+      "required": false
+    },
+    "allowed_dirs": {
+      "type": "directory",
+      "title": "Allowed Directories",
+      "description": "Optional directory allowlist restricting local file reads and writes",
+      "multiple": true,
+      "required": false
+    }
+  }
+}

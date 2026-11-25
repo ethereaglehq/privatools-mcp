@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "privatools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@privatools/mcp"
+      ],
+      "env": {
+        "PRIVATOOLS_API_KEY": "${PRIVATOOLS_API_KEY}",
+        "PRIVATOOLS_MCP_ALLOWED_DIRS": "${PRIVATOOLS_MCP_ALLOWED_DIRS}"
+      }
+    },
+    "privatools-remote": {
+      "url": "https://api.privatools.me/mcp"
+    }
+  }
+}

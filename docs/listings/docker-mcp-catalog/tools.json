@@ -1,0 +1,63 @@
+[
+  {
+    "name": "privatools_list_tools",
+    "description": "Search and filter PrivaTools /api/v1 operations by keyword query, category, or mode (sync/async). Uses the live /api/v1 catalog (or OpenAPI spec) with an automatic offline fallback.",
+    "arguments": [
+      { "name": "query", "type": "string", "desc": "Optional keyword search across operation slugs, tool aliases, summaries, and categories." },
+      { "name": "category", "type": "string", "desc": "Optional case-insensitive category filter." },
+      { "name": "mode", "type": "string", "desc": "Filter by execution mode: all, sync, or async." },
+      { "name": "limit", "type": "integer", "desc": "Maximum operations to return (1-250, default 50)." },
+      { "name": "offset", "type": "integer", "desc": "Pagination offset (default 0)." }
+    ]
+  },
+  {
+    "name": "privatools_describe_tool",
+    "description": "Inspect the exact endpoint, HTTP method, accepted file upload fields, form/query parameters, constraints, cost, async support, and response media types for a PrivaTools operation slug or alias.",
+    "arguments": [
+      { "name": "operation", "type": "string", "desc": "Operation slug, path, or tool alias (e.g. 'compress', 'accessibility-check')." }
+    ]
+  },
+  {
+    "name": "privatools_run_tool",
+    "description": "Execute any synchronous PrivaTools /api/v1/<operation> tool against local file(s) and parameters (OpenAPI spec: https://api.privatools.me/api/v1/openapi.json, docs: https://privatools.me/mcp). Binary outputs are written directly to disk without overwriting unless overwrite is true; JSON tools return JSON inline.",
+    "arguments": [
+      { "name": "operation", "type": "string", "desc": "Operation slug, path, or tool alias." },
+      { "name": "file_path", "type": "string", "desc": "Local path to a single input file." },
+      { "name": "file_paths", "type": "array", "desc": "Local paths to multiple input files, in order." },
+      { "name": "file_field", "type": "string", "desc": "Optional multipart upload field name override." },
+      { "name": "file_fields", "type": "object", "desc": "Optional map of multipart field names to file path(s)." },
+      { "name": "params", "type": "object", "desc": "Optional operation parameters (form, JSON, or query fields)." },
+      { "name": "output_path", "type": "string", "desc": "Optional destination path for binary output." },
+      { "name": "overwrite", "type": "boolean", "desc": "Allow replacing an existing file at output_path (default false)." }
+    ]
+  },
+  {
+    "name": "privatools_submit_job",
+    "description": "Submit an asynchronous background job (POST /api/v1/jobs) for supported heavy/large operations such as 'merge', 'compress', 'grayscale', or 'pdf-to-text'.",
+    "arguments": [
+      { "name": "operation", "type": "string", "desc": "Async operation slug." },
+      { "name": "file_path", "type": "string", "desc": "Local path to a single PDF input file." },
+      { "name": "file_paths", "type": "array", "desc": "Local paths to multiple PDF input files, in order." },
+      { "name": "options", "type": "object", "desc": "Optional operation-specific options object." },
+      { "name": "idempotency_key", "type": "string", "desc": "Optional Idempotency-Key for safe retries." }
+    ]
+  },
+  {
+    "name": "privatools_job_status",
+    "description": "Strictly read-only tool to poll an asynchronous job's status (action: 'status') or download its completed artifact to output_path (action: 'download'). Does not delete or mutate server-side jobs.",
+    "arguments": [
+      { "name": "job_id", "type": "string", "desc": "Job ID returned by privatools_submit_job." },
+      { "name": "action", "type": "string", "desc": "Read-only action to perform: status or download." },
+      { "name": "output_path", "type": "string", "desc": "Destination file path when downloading a binary artifact." },
+      { "name": "overwrite", "type": "boolean", "desc": "Allow replacing an existing file at output_path (default false)." },
+      { "name": "download", "type": "boolean", "desc": "Automatically download when action is status and job succeeded." }
+    ]
+  },
+  {
+    "name": "privatools_delete_job",
+    "description": "Permanently delete a completed server-side async job artifact or cancel a running asynchronous job (destructiveHint: true).",
+    "arguments": [
+      { "name": "job_id", "type": "string", "desc": "Job ID returned by privatools_submit_job to delete or cancel." }
+    ]
+  }
+]

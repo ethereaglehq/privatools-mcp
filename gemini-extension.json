@@ -1,0 +1,29 @@
+{
+  "name": "privatools",
+  "version": "0.1.0",
+  "description": "Privacy-first PDF, image, document, and media processing tools via PrivaTools.",
+  "mcpServers": {
+    "privatools": {
+      "command": "node",
+      "args": [
+        "${extensionPath}/bin/privatools-mcp.mjs"
+      ],
+      "cwd": "${extensionPath}"
+    }
+  },
+  "settings": [
+    {
+      "name": "PrivaTools API Key",
+      "description": "Optional API key from privatools.me (stored in keychain; omit for anonymous free-tier usage).",
+      "envVar": "PRIVATOOLS_API_KEY",
+      "sensitive": true
+    },
+    {
+      "name": "Allowed Directories",
+      "description": "Optional OS path-delimited directory allowlist restricting local file reads and writes.",
+      "envVar": "PRIVATOOLS_MCP_ALLOWED_DIRS",
+      "sensitive": false
+    }
+  ],
+  "contextFileName": "GEMINI.md"
+}

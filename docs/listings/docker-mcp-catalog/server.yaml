@@ -1,0 +1,42 @@
+name: privatools
+type: server
+meta:
+  category: productivity
+  tags:
+    - pdf
+    - image
+    - media
+    - document
+    - privacy
+    - ocr
+    - mcp
+about:
+  title: PrivaTools
+  description: Stateless privacy-first PDF, image, document, and media processing tools via PrivaTools API.
+  icon: https://privatools.me/icons/icon-512.png
+source:
+  project: https://github.com/ethereaglehq/privatools-mcp
+  branch: main
+config:
+  description: Configure an optional PrivaTools API key (from privatools.me) and/or a custom PrivaTools-compatible API URL.
+  secrets:
+    - name: privatools.api_key
+      env: PRIVATOOLS_API_KEY
+      example: pt_live_example_key
+  env:
+    - name: PRIVATOOLS_API_URL
+      example: https://api.privatools.me/api/v1
+      value: "{{privatools.api_url}}"
+    - name: PRIVATOOLS_MCP_ALLOWED_DIRS
+      example: /workspace
+      value: "{{privatools.allowed_dirs}}"
+  parameters:
+    type: object
+    properties:
+      api_url:
+        type: string
+        description: Optional PrivaTools-compatible API v1 base URL (defaults to https://api.privatools.me/api/v1)
+      allowed_dirs:
+        type: string
+        description: Optional colon-separated directory allowlist for container-mounted file paths
+license: MIT

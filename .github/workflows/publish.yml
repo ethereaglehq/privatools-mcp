@@ -1,0 +1,369 @@
+name: Publish @privatools/mcp
+
+# Strictly manual-only (workflow_dispatch): pushing commits or tags can NEVER
+# trigger publishing. Even a manual dispatch defaults to `dry_run: true` and
+# performs verification only (tests, .mcpb build, npm pack guard, and Official
+# MCP Registry manifest validation) without publishing anything.
+#
+# Required one-time setup by the repository owner before publishing:
+#   1. Create GitHub Actions deployment environment `mcp-publish` with
+#      Required Reviewers enabled (Settings -> Environments -> mcp-publish).
+#   2. Create `@privatools/mcp` on npm (initial bootstrap publish) and
+#      configure npm Trusted Publishing (OIDC) bound to:
+#        - Owner:       ethereaglehq
+#        - Repository:  privatools-mcp
+#        - Workflow:    publish.yml
+#        - Environment: mcp-publish
+#      Note: the first OIDC publish must run within 2 days of configuring
+#      Trusted Publishing on npmjs.com or the trusted publisher expires.
+#   3. Official MCP Registry (`io.github.ethereaglehq/privatools`) publishes
+#      from root `server.json` via GitHub Actions OIDC
+#      (`mcp-publisher login github-oidc`) — no DNS TXT records, no private
+#      keys, and no PATs are required. You can enable `publish_npm` +
+#      `publish_registry` together, or run `publish_registry` alone when
+#      `@privatools/mcp@<version>` is already live on npm.
+#   4. Dispatch this workflow manually with `dry_run: false` and the chosen
+#      publish target(s) enabled, then approve the `mcp-publish` deployment.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run only (run tests, build .mcpb, and validate server.json without publishing; set false to publish)"
+        type: boolean
+        default: true
+      version:
+        description: "Optional expected package.json version guard (e.g. 0.1.0)"
+        type: string
+        required: false
+        default: ""
+      publish_npm:
+        description: "Publish @privatools/mcp to npm via OIDC Trusted Publishing with --provenance (requires dry_run=false + mcp-publish approval)"
+        type: boolean
+        default: false
+      publish_registry:
+        description: "Publish io.github.ethereaglehq/privatools to Official MCP Registry via GitHub OIDC (requires dry_run=false + mcp-publish approval)"
+        type: boolean
+        default: false
+      publish_oci:
+        description: "Build, scan, push, and cosign-sign ghcr.io/ethereaglehq/privatools-mcp (requires dry_run=false + mcp-publish approval)"
+        type: boolean
+        default: false
+
+# Least privilege at the top level; write scopes are granted strictly per job.
+permissions:
+  contents: read
+
+env:
+  MCP_IMAGE_NAME: ghcr.io/ethereaglehq/privatools-mcp
+  MCP_REGISTRY_MANIFEST: server.json
+  MCP_PUBLISHER_VERSION: v1.8.16
+  MCP_PUBLISHER_ASSET: mcp-publisher_linux_amd64.tar.gz
+  MCP_PUBLISHER_SHA256: 6e2f799550cf843c6fd3350498d56cc49be3dc0af1e6237eb0e6435c7a9d5c05
+
+jobs:
+  verify:
+    name: Test @privatools/mcp, validate MCPB & server.json
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      package_version: ${{ steps.version_check.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Run MCP unit tests
+        run: node --test test/*.test.mjs
+      - name: Validate .mcpb manifest and payload
+        run: node scripts/build-mcpb.mjs --check
+      - name: Verify npm pack payload allowlist
+        run: |
+          node -e '
+            const { execFileSync } = require("node:child_process");
+            const out = execFileSync("npm", ["pack", "--dry-run", "--json"], { encoding: "utf8" });
+            const parsed = JSON.parse(out);
+            const files = (parsed[0]?.files || []).map((f) => f.path).sort();
+            const allowedExact = new Set(["LICENSE", "README.md", "package.json"]);
+            const allowedPrefixes = ["bin/", "data/", "src/"];
+            const unexpected = files.filter(
+              (p) => !allowedExact.has(p) && !allowedPrefixes.some((prefix) => p.startsWith(prefix))
+            );
+            if (unexpected.length > 0) {
+              console.error("Unexpected files in npm pack output:", unexpected);
+              process.exit(1);
+            }
+            console.log(`npm pack guard OK (${files.length} files): ${files.join(", ")}`);
+          '
+      - name: Verify package version guard
+        id: version_check
+        env:
+          EXPECTED_VERSION: ${{ inputs.version }}
+        run: |
+          pkg_ver=$(node -p "require('./package.json').version")
+          echo "version=${pkg_ver}" >> "$GITHUB_OUTPUT"
+          if [ -n "$EXPECTED_VERSION" ] && [ "$pkg_ver" != "$EXPECTED_VERSION" ]; then
+            echo "Input version '${EXPECTED_VERSION}' does not match package.json '${pkg_ver}'" >&2
+            exit 1
+          fi
+      - name: Verify Official MCP Registry manifest parity
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("./package.json", "utf8"));
+            const manifest = JSON.parse(fs.readFileSync(process.env.MCP_REGISTRY_MANIFEST, "utf8"));
+            if (pkg.mcpName !== "io.github.ethereaglehq/privatools") {
+              console.error(`Unexpected package.json mcpName: ${pkg.mcpName}`);
+              process.exit(1);
+            }
+            if (manifest.name !== pkg.mcpName) {
+              console.error(`Manifest name (${manifest.name}) does not match package.json mcpName (${pkg.mcpName})`);
+              process.exit(1);
+            }
+            if (manifest.version !== pkg.version) {
+              console.error(`Manifest version (${manifest.version}) does not match package.json version (${pkg.version})`);
+              process.exit(1);
+            }
+            if (typeof manifest.description !== "string" || manifest.description.length < 1 || manifest.description.length > 100) {
+              console.error(`Manifest description must be 1..100 chars, got ${manifest.description?.length}`);
+              process.exit(1);
+            }
+            if (manifest.repository?.url !== "https://github.com/ethereaglehq/privatools-mcp" || "subfolder" in (manifest.repository || {})) {
+              console.error("server.json repository must point to https://github.com/ethereaglehq/privatools-mcp with no subfolder");
+              process.exit(1);
+            }
+            const npmPkg = (manifest.packages || []).find((p) => p.registryType === "npm");
+            if (!npmPkg || npmPkg.identifier !== pkg.name || npmPkg.version !== pkg.version) {
+              console.error("Manifest npm package entry does not match package.json");
+              process.exit(1);
+            }
+            console.log(`Registry manifest parity OK: ${manifest.name}@${manifest.version} (desc ${manifest.description.length} chars)`);
+          '
+      - name: Validate server.json with SHA-256-pinned mcp-publisher (read-only)
+        if: ${{ inputs.dry_run == true || inputs.publish_registry == true }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/mcp-publisher
+          curl -sSfL \
+            "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/${MCP_PUBLISHER_ASSET}" \
+            -o /tmp/mcp-publisher.tar.gz
+          printf '%s  %s\n' "${MCP_PUBLISHER_SHA256}" "/tmp/mcp-publisher.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/mcp-publisher.tar.gz -C /tmp/mcp-publisher mcp-publisher
+          chmod +x /tmp/mcp-publisher/mcp-publisher
+          rm -f /tmp/mcp-publisher.tar.gz
+          /tmp/mcp-publisher/mcp-publisher validate "$MCP_REGISTRY_MANIFEST"
+      - name: Build .mcpb bundle artifact
+        run: node scripts/build-mcpb.mjs --output /tmp/privatools-mcp.mcpb
+      - name: Upload .mcpb artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: privatools-mcpb
+          path: /tmp/privatools-mcp.mcpb
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-npm:
+    name: Publish @privatools/mcp to npm (OIDC Trusted Publishing)
+    needs: verify
+    if: inputs.dry_run == false && inputs.publish_npm == true
+    environment: mcp-publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for npm OIDC Trusted Publishing and Sigstore provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+      - name: Pre-flight check for OIDC provenance metadata
+        run: |
+          node -e '
+            const pkg = require("./package.json");
+            const repoUrl = typeof pkg.repository === "string" ? pkg.repository : pkg.repository?.url;
+            if (!repoUrl) {
+              console.error("package.json must declare repository before npm OIDC publish.");
+              process.exit(1);
+            }
+            if (pkg.mcpName !== "io.github.ethereaglehq/privatools") {
+              console.error("package.json must declare mcpName=io.github.ethereaglehq/privatools before npm OIDC publish.");
+              process.exit(1);
+            }
+            console.log(`Pre-flight OK: ${pkg.name}@${pkg.version} (${repoUrl}, mcpName=${pkg.mcpName})`);
+          '
+      # npm Trusted Publishing (OIDC + provenance) requires Node >= 22.14.0 and npm >= 11.5.1.
+      # No static npm token secrets are used; npm exchanges the GitHub Actions OIDC token directly.
+      - name: Ensure npm >= 11.5.1 for OIDC Trusted Publishing
+        run: |
+          npm install -g npm@latest
+          npm --version
+      - name: Re-run MCP tests before publish
+        run: node --test test/*.test.mjs
+      - name: Publish @privatools/mcp with Sigstore provenance
+        run: npm publish --access public --provenance
+
+  publish-registry:
+    name: Publish io.github.ethereaglehq/privatools to Official MCP Registry (GitHub OIDC)
+    needs: [verify, publish-npm]
+    if: ${{ !cancelled() && needs.verify.result == 'success' && (needs.publish-npm.result == 'success' || needs.publish-npm.result == 'skipped') && inputs.dry_run == false && inputs.publish_registry == true }}
+    environment: mcp-publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for mcp-publisher login github-oidc
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Verify @privatools/mcp exists on npm with matching mcpName
+        env:
+          EXPECTED_VERSION: ${{ needs.verify.outputs.package_version }}
+          NPM_PUBLISH_RESULT: ${{ needs.publish-npm.result }}
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("./package.json", "utf8"));
+            const manifest = JSON.parse(fs.readFileSync(process.env.MCP_REGISTRY_MANIFEST, "utf8"));
+            const expectedVersion = process.env.EXPECTED_VERSION || pkg.version;
+            const expectedName = manifest.name;
+            if (pkg.mcpName !== expectedName) {
+              console.error(`package.json mcpName (${pkg.mcpName}) does not match ${process.env.MCP_REGISTRY_MANIFEST} (${expectedName})`);
+              process.exit(1);
+            }
+            if (manifest.version !== expectedVersion) {
+              console.error(`manifest version (${manifest.version}) does not match expected version (${expectedVersion})`);
+              process.exit(1);
+            }
+            const npmUrl = `https://registry.npmjs.org/${encodeURIComponent(pkg.name)}/${encodeURIComponent(expectedVersion)}`;
+            const maxAttempts = process.env.NPM_PUBLISH_RESULT === "success" ? 6 : 2;
+            (async () => {
+              for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                const res = await fetch(npmUrl, { headers: { Accept: "application/json" } });
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data.version !== expectedVersion) {
+                    console.error(`npm returned version ${data.version}, expected ${expectedVersion}`);
+                    process.exit(1);
+                  }
+                  if (data.mcpName !== expectedName) {
+                    console.error(`Published ${pkg.name}@${expectedVersion} on npm has mcpName=${JSON.stringify(data.mcpName)}, expected ${JSON.stringify(expectedName)}`);
+                    process.exit(1);
+                  }
+                  console.log(`Confirmed ${pkg.name}@${expectedVersion} on npm with mcpName=${data.mcpName}`);
+                  process.exit(0);
+                }
+                console.log(`Attempt ${attempt}/${maxAttempts}: ${npmUrl} returned HTTP ${res.status}`);
+                if (attempt < maxAttempts) {
+                  await new Promise((resolve) => setTimeout(resolve, 10_000));
+                }
+              }
+              console.error(`${pkg.name}@${expectedVersion} is not published on npm yet. Publish to npm first (or enable publish_npm=true).`);
+              process.exit(1);
+            })().catch((err) => {
+              console.error(err);
+              process.exit(1);
+            });
+          '
+      - name: Download and verify SHA-256-pinned mcp-publisher binary
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/mcp-publisher
+          curl -sSfL \
+            "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/${MCP_PUBLISHER_ASSET}" \
+            -o /tmp/mcp-publisher.tar.gz
+          printf '%s  %s\n' "${MCP_PUBLISHER_SHA256}" "/tmp/mcp-publisher.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/mcp-publisher.tar.gz -C /tmp/mcp-publisher mcp-publisher
+          chmod +x /tmp/mcp-publisher/mcp-publisher
+          rm -f /tmp/mcp-publisher.tar.gz
+      - name: Validate Official MCP Registry manifest
+        run: /tmp/mcp-publisher/mcp-publisher validate "$MCP_REGISTRY_MANIFEST"
+      - name: Authenticate via GitHub OIDC and publish to Official MCP Registry
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [ "$DRY_RUN" != "false" ]; then
+            echo "dry_run=${DRY_RUN}; skipping Official MCP Registry login and publish."
+            exit 0
+          fi
+          /tmp/mcp-publisher/mcp-publisher login github-oidc
+          /tmp/mcp-publisher/mcp-publisher publish "$MCP_REGISTRY_MANIFEST"
+
+  publish-oci:
+    name: Build, scan, push, and cosign-sign MCP OCI image
+    needs: verify
+    if: inputs.dry_run == false && inputs.publish_oci == true
+    environment: mcp-publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Cosign keyless OIDC signing
+      packages: write # Push image to GHCR
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        id: meta
+        with:
+          images: ${{ env.MCP_IMAGE_NAME }}
+          tags: |
+            type=raw,value=v${{ needs.verify.outputs.package_version }}
+            type=sha,prefix=sha-
+      # Dockerfile has zero RUN instructions, so BuildKit builds multi-arch
+      # (linux/amd64, linux/arm64) natively without QEMU emulation.
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        id: build
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          sbom: true
+          provenance: true
+      - name: Gate MCP OCI image on vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.MCP_IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          scanners: vuln
+          format: sarif
+          output: trivy-mcp-image.sarif
+          severity: CRITICAL,HIGH
+          limit-severities-for-sarif: true
+          ignore-unfixed: true
+          exit-code: '1'
+      - name: Preserve MCP image scan report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() && hashFiles('trivy-mcp-image.sarif') != '' }}
+        with:
+          name: trivy-mcp-image-sarif
+          path: trivy-mcp-image.sarif
+          if-no-files-found: error
+          retention-days: 14
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v2.6.5
+      - name: Sign published MCP OCI image digest
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${MCP_IMAGE_NAME}@${IMAGE_DIGEST}"

@@ -1,0 +1,124 @@
+name: Test @privatools/mcp
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  MCP_REGISTRY_MANIFEST: server.json
+  MCP_PUBLISHER_VERSION: v1.8.16
+  MCP_PUBLISHER_ASSET: mcp-publisher_linux_amd64.tar.gz
+  MCP_PUBLISHER_SHA256: 6e2f799550cf843c6fd3350498d56cc49be3dc0af1e6237eb0e6435c7a9d5c05
+
+jobs:
+  test:
+    name: Unit tests, MCPB check, npm pack guard & server.json validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Run unit and stdio integration tests
+        run: node --test test/*.test.mjs
+      - name: Validate .mcpb manifest and bundle inputs
+        run: node scripts/build-mcpb.mjs --check
+      - name: Verify npm pack payload allowlist
+        run: |
+          node -e '
+            const { execFileSync } = require("node:child_process");
+            const out = execFileSync("npm", ["pack", "--dry-run", "--json"], { encoding: "utf8" });
+            const parsed = JSON.parse(out);
+            const files = (parsed[0]?.files || []).map((f) => f.path).sort();
+            const allowedExact = new Set(["LICENSE", "README.md", "package.json"]);
+            const allowedPrefixes = ["bin/", "data/", "src/"];
+            const unexpected = files.filter(
+              (p) => !allowedExact.has(p) && !allowedPrefixes.some((prefix) => p.startsWith(prefix))
+            );
+            const required = [
+              "LICENSE",
+              "README.md",
+              "package.json",
+              "bin/privatools-mcp.mjs",
+              "data/operation_metadata.json",
+              "src/client.mjs",
+              "src/protocol.mjs",
+              "src/tools.mjs",
+            ];
+            const missing = required.filter((p) => !files.includes(p));
+            if (unexpected.length > 0 || missing.length > 0) {
+              console.error("npm pack guard failed.", { files, unexpected, missing });
+              process.exit(1);
+            }
+            console.log(`npm pack guard OK (${files.length} files): ${files.join(", ")}`);
+          '
+      - name: Verify server.json and manifest parity
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const pkg = JSON.parse(fs.readFileSync("./package.json", "utf8"));
+            const server = JSON.parse(fs.readFileSync(process.env.MCP_REGISTRY_MANIFEST, "utf8"));
+            const mcpb = JSON.parse(fs.readFileSync("./manifest.json", "utf8"));
+            const gemini = JSON.parse(fs.readFileSync("./gemini-extension.json", "utf8"));
+
+            if (pkg.mcpName !== "io.github.ethereaglehq/privatools") {
+              console.error(`Unexpected package.json mcpName: ${pkg.mcpName}`);
+              process.exit(1);
+            }
+            if (server.name !== pkg.mcpName) {
+              console.error(`server.json name (${server.name}) does not match package.json mcpName (${pkg.mcpName})`);
+              process.exit(1);
+            }
+            if (server.version !== pkg.version) {
+              console.error(`server.json version (${server.version}) does not match package.json version (${pkg.version})`);
+              process.exit(1);
+            }
+            if (mcpb.version !== pkg.version) {
+              console.error(`manifest.json version (${mcpb.version}) does not match package.json version (${pkg.version})`);
+              process.exit(1);
+            }
+            if (gemini.version !== pkg.version) {
+              console.error(`gemini-extension.json version (${gemini.version}) does not match package.json version (${pkg.version})`);
+              process.exit(1);
+            }
+            if (typeof server.description !== "string" || server.description.length < 1 || server.description.length > 100) {
+              console.error(`server.json description must be 1..100 chars, got ${server.description?.length}`);
+              process.exit(1);
+            }
+            if (server.repository?.url !== "https://github.com/ethereaglehq/privatools-mcp" || "subfolder" in (server.repository || {})) {
+              console.error("server.json repository must point to https://github.com/ethereaglehq/privatools-mcp with no subfolder");
+              process.exit(1);
+            }
+            const npmPkg = (server.packages || []).find((p) => p.registryType === "npm");
+            if (!npmPkg || npmPkg.identifier !== pkg.name || npmPkg.version !== pkg.version || npmPkg.transport?.type !== "stdio") {
+              console.error("server.json npm package entry does not match package.json");
+              process.exit(1);
+            }
+            const remote = (server.remotes || [])[0];
+            if (!remote || remote.type !== "streamable-http" || remote.url !== "https://api.privatools.me/mcp") {
+              console.error("server.json remote entry must declare streamable-http https://api.privatools.me/mcp");
+              process.exit(1);
+            }
+            console.log(`Manifest parity OK: ${server.name}@${server.version} (desc ${server.description.length} chars)`);
+          '
+      - name: Validate server.json with SHA-256-pinned mcp-publisher
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/mcp-publisher
+          curl -sSfL \
+            "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/${MCP_PUBLISHER_ASSET}" \
+            -o /tmp/mcp-publisher.tar.gz
+          printf '%s  %s\n' "${MCP_PUBLISHER_SHA256}" "/tmp/mcp-publisher.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/mcp-publisher.tar.gz -C /tmp/mcp-publisher mcp-publisher
+          chmod +x /tmp/mcp-publisher/mcp-publisher
+          rm -f /tmp/mcp-publisher.tar.gz
+          /tmp/mcp-publisher/mcp-publisher validate "$MCP_REGISTRY_MANIFEST"

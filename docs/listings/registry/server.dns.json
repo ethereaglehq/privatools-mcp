@@ -1,0 +1,65 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "me.privatools/privatools",
+  "title": "PrivaTools",
+  "description": "Stateless privacy-first PDF, image, document, and media processing tools via PrivaTools API.",
+  "version": "0.1.0",
+  "websiteUrl": "https://privatools.me/mcp",
+  "repository": {
+    "url": "https://github.com/ethereaglehq/privatools-mcp",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://privatools.me/icons/icon-512.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@privatools/mcp",
+      "version": "0.1.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "PRIVATOOLS_API_KEY",
+          "description": "Optional PrivaTools API key from privatools.me for authenticated higher-quota access",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "PRIVATOOLS_MCP_ALLOWED_DIRS",
+          "description": "Optional OS path-delimited directory allowlist for local file reads and writes",
+          "isRequired": false,
+          "format": "filepath"
+        },
+        {
+          "name": "PRIVATOOLS_API_URL",
+          "description": "Optional PrivaTools-compatible API v1 base URL (defaults to https://api.privatools.me/api/v1)",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.privatools.me/mcp",
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "description": "Optional PrivaTools API key",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

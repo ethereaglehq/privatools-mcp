@@ -14,9 +14,7 @@ Built on pure Node.js (`>= 20`) ESM built-ins (`fs`, `path`, `fetch`, `FormData`
 
 [![Install in VS Code (Local)](https://img.shields.io/badge/VS_Code-Install_PrivaTools_MCP-0098FF?style=flat-square&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522privatools%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522-y%2522%252C%2522%2540privatools%252Fmcp%2522%255D%257D)
 [![Install in VS Code (Remote)](https://img.shields.io/badge/VS_Code-Install_PrivaTools_Remote-0098FF?style=flat-square&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522privatools%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fapi.privatools.me%252Fmcp%2522%257D)
-<!-- Glama badge placeholder: uncomment once ethereaglehq/privatools-mcp is claimed on https://glama.ai/mcp/servers (prerequisite for punkpeye/awesome-mcp-servers)
-[![PrivaTools MCP server](https://glama.ai/mcp/servers/GLAMA_SERVER_ID/badge)](https://glama.ai/mcp/servers/GLAMA_SERVER_ID)
--->
+[![@privatools/mcp MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/ethereaglehq/privatools-mcp/badges/score.svg)](https://glama.ai/mcp/servers/ethereaglehq/privatools-mcp)
 
 ## Protocol Support (Dual-Era MCP `2026-07-28` + Legacy `<= 2025-11-25`)
 

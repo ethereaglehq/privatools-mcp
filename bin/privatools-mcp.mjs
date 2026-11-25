@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import { createPrivaToolsClient, DEFAULT_API_URL } from "../src/client.mjs";
 import { createMcpServer } from "../src/protocol.mjs";
-import { createPrivaToolsTools } from "../src/tools.mjs";
+import { createPrivaToolsTools, SERVER_INSTRUCTIONS } from "../src/tools.mjs";
 
 const PKG = JSON.parse(
   fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")
@@ -25,13 +25,6 @@ const SERVER_ICONS = [
     sizes: ["192x192"],
   },
 ];
-
-const SERVER_INSTRUCTIONS = [
-  "Stateless MCP server for the PrivaTools file processing API.",
-  "Use privatools_list_tools and privatools_describe_tool to discover operations, upload field names, and options.",
-  "Use privatools_run_tool for synchronous operations (writes binary outputs to disk without overwriting unless overwrite: true, or returns JSON directly).",
-  "Use privatools_submit_job to submit asynchronous background jobs, privatools_job_status to poll status or download artifacts, and privatools_delete_job to cancel a running job or delete a server-side artifact immediately.",
-].join(" ");
 
 function printHelp() {
   process.stdout.write(`PrivaTools MCP Server (${PKG.name} v${PKG.version})

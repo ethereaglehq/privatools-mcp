@@ -4,6 +4,13 @@ import {
   normalizeOperationSlug,
 } from "./client.mjs";
 
+export const SERVER_INSTRUCTIONS = [
+  "Stateless MCP server for the PrivaTools file processing API.",
+  "Operation discovery and parameter schema lookup are provided by privatools_list_tools and privatools_describe_tool.",
+  "Synchronous operations are provided by privatools_run_tool, which writes binary outputs to local disk without overwriting existing files unless overwrite is true, or returns JSON payloads directly.",
+  "Asynchronous background jobs are separated across privatools_submit_job (job submission), privatools_job_status (read-only status polling and artifact download), and privatools_delete_job (job cancellation and immediate server-side artifact deletion).",
+].join(" ");
+
 const HEADERS_SCHEMA = {
   type: "object",
   description: "Relevant X-* and HTTP response headers returned by PrivaTools.",
@@ -460,7 +467,7 @@ export function createPrivaToolsTools(client) {
       name: "privatools_run_tool",
       title: "Run PrivaTools File Operation",
       description:
-        "Execute any synchronous PrivaTools /api/v1/<operation> file or document tool against local file(s) and parameters. Binary outputs are written directly to disk (without overwriting unless overwrite: true) and concise metadata + X-* headers are returned; JSON-returning tools return their JSON response directly. See the full OpenAPI specification at https://api.privatools.me/api/v1/openapi.json and MCP documentation at https://privatools.me/mcp.",
+        "Execute any synchronous PrivaTools /api/v1/<operation> file or document tool against local file(s) and parameters. Binary outputs are written directly to disk (without overwriting unless overwrite: true) and concise metadata + X-* headers are returned; JSON-returning tools return their JSON response directly. Parameter and upload field details for each operation are available from privatools_describe_tool.",
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -657,7 +664,7 @@ export function createPrivaToolsTools(client) {
       name: "privatools_job_status",
       title: "Check or Download PrivaTools Job",
       description:
-        "Poll an asynchronous job's status (action: 'status') or download its completed artifact to output_path (action: 'download'). Read-only on the server — use privatools_delete_job to cancel or delete a job.",
+        "Poll an asynchronous job's status (action: 'status') or download its completed artifact to output_path (action: 'download'). Read-only on the server; job cancellation and deletion are handled separately by privatools_delete_job.",
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -678,7 +685,7 @@ export function createPrivaToolsTools(client) {
             enum: ["status", "download"],
             default: "status",
             description:
-              "Read-only action to perform: 'status' (poll) or 'download' (fetch completed artifact). To delete or cancel a job, call privatools_delete_job.",
+              "Read-only action to perform: 'status' (poll) or 'download' (fetch completed artifact). Job cancellation and deletion are handled separately by privatools_delete_job.",
           },
           output_path: {
             type: "string",
@@ -736,7 +743,7 @@ export function createPrivaToolsTools(client) {
         if (!["status", "download"].includes(action)) {
           throw new PrivaToolsError(
             "invalid_arguments",
-            "'action' must be one of: status, download. Use 'privatools_delete_job' to delete or cancel a job."
+            "'action' must be one of: status, download. Job cancellation and deletion are handled separately by privatools_delete_job."
           );
         }
         const outputPath = assertOptionalString(args.output_path, "output_path");

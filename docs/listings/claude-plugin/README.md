@@ -21,7 +21,7 @@
      - [ ] Auth configured as public no-auth (anonymous sync + anonymous async jobs work out of the box on `https://api.privatools.me/mcp` via unguessable capability `job_id`s with the same per-format limits as sync and `<= 1 h` automatic retention; optional `X-API-Key` unlocks higher keyed quotas).
      - [ ] Every tool defines `title`, `readOnlyHint`, and `destructiveHint`, with programmatic tool names `<= 64` characters.
      - [ ] **Strict read/write tool separation (6 tools):** Anthropic rejects any single tool that combines safe read actions with destructive write actions. Confirm live `/mcp` exposes strictly read-only `privatools_job_status` (`readOnlyHint: true`, `destructiveHint: false`) separately from dedicated destructive `privatools_delete_job` (`readOnlyHint: false`, `destructiveHint: true`).
-     - [ ] Generic tool caller descriptions (`privatools_run_tool`) explicitly reference `https://api.privatools.me/api/v1/openapi.json` and `https://privatools.me/mcp`.
+     - [ ] Tool descriptions and server instructions are purely descriptive with no imperative cross-tool instructions or embedded OpenAPI doc URLs (docs live on `https://privatools.me/mcp`).
      - [ ] Listing metadata ready from [`../COPY.md`](../COPY.md) and [`../SUBMIT.md`](../SUBMIT.md) (§10): Docs URL (`https://privatools.me/mcp`), Privacy Policy (`https://privatools.me/privacy`), Support (`hello@privatools.me` / `https://privatools.me/support` / `https://github.com/ethereaglehq/privatools-mcp/issues`), Icon (`../assets/icon-512.png`).
 
 ---

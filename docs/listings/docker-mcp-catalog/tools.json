@@ -19,7 +19,7 @@
   },
   {
     "name": "privatools_run_tool",
-    "description": "Execute any synchronous PrivaTools /api/v1/<operation> tool against local file(s) and parameters (OpenAPI spec: https://api.privatools.me/api/v1/openapi.json, docs: https://privatools.me/mcp). Binary outputs are written directly to disk without overwriting unless overwrite is true; JSON tools return JSON inline.",
+    "description": "Execute any synchronous PrivaTools /api/v1/<operation> tool against local file(s) and parameters. Binary outputs are written directly to disk without overwriting unless overwrite is true; JSON tools return JSON inline. Parameter and upload field details for each operation are available from privatools_describe_tool.",
     "arguments": [
       { "name": "operation", "type": "string", "desc": "Operation slug, path, or tool alias." },
       { "name": "file_path", "type": "string", "desc": "Local path to a single input file." },

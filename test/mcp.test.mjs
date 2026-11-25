@@ -1031,8 +1031,8 @@ describe("PrivaTools MCP server", () => {
       }
 
       const runTool = listed.result.tools.find((t) => t.name === "privatools_run_tool");
-      assert.match(runTool.description, /https:\/\/api\.privatools\.me\/api\/v1\/openapi\.json/);
-      assert.match(runTool.description, /https:\/\/privatools\.me\/mcp/);
+      assert.doesNotMatch(runTool.description, /openapi\.json/i);
+      assert.doesNotMatch(runTool.description, /https?:\/\/\S*privatools\.me/i);
 
       const statusTool = listed.result.tools.find((t) => t.name === "privatools_job_status");
       assert.deepEqual(statusTool.inputSchema.properties.action.enum, ["status", "download"]);

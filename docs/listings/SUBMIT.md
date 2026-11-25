@@ -154,7 +154,7 @@ Privacy-first MCP server for 140+ stateless PDF, image, audio, video, OCR, and d
 ### Why should this server be added to the Cline MCP Marketplace?
 - **Progressive discovery (6 tools, not 200+ schemas):** Keeps context usage small via `privatools_list_tools`, `privatools_describe_tool`, `privatools_run_tool`, `privatools_submit_job`, `privatools_job_status` (strictly read-only), and `privatools_delete_job` (dedicated destructive delete).
 - **Zero runtime dependencies:** Pure Node.js (`>= 20`) ESM package (`@privatools/mcp`, MIT-licensed client) with optional `PRIVATOOLS_MCP_ALLOWED_DIRS` filesystem sandboxing (`fs.realpath` containment) and direct disk streaming for binary outputs (no base64 bloat in LLM context).
-- **Dual transport:** Local stdio via `npx -y @privatools/mcp` and hosted remote Streamable HTTP at `https://api.privatools.me/mcp`.
+- **Dual transport & zero-signup access:** Local stdio via `npx -y @privatools/mcp` and hosted remote Streamable HTTP at `https://api.privatools.me/mcp` (both synchronous operations and anonymous async jobs work out of the box without an API key using unguessable capability `job_id`s, same per-format limits as sync, and `<= 1 h` retention; optional `X-API-Key` raises quotas).
 - **Privacy-first handling:** Synchronous uploads are deleted immediately after each HTTP response; async job artifacts expire within 1 hour or on demand via `privatools_delete_job`. No tracking, no third-party file sharing, no AI training on user files.
 
 ### Install & Documentation
@@ -180,7 +180,7 @@ Open a PR to [`https://github.com/docker/mcp-registry`](https://github.com/docke
 | **File 3** | `servers/privatools/tools.json` ← copy verbatim from [`docs/listings/docker-mcp-catalog/tools.json`](./docker-mcp-catalog/tools.json) |
 | **Docker Build Source** | Root [`Dockerfile`](../../Dockerfile) (`node:24-alpine`, `USER node`, zero `RUN` layers, `LABEL io.modelcontextprotocol.server.name="io.github.ethereaglehq/privatools"`) |
 | **License** | `MIT` *(MCP client)* |
-| **Test Credentials Note** | `PRIVATOOLS_API_KEY` is optional; basic free-tier usage works without an API key against `https://api.privatools.me/api/v1`. |
+| **Test Credentials Note** | `PRIVATOOLS_API_KEY` is optional; both synchronous tools and anonymous async jobs on `https://api.privatools.me/mcp` work without an API key (unguessable capability `job_id`s, same per-format limits as sync, `<= 1 h` automatic retention; optional `X-API-Key` unlocks higher keyed quotas). |
 
 ---
 
@@ -192,3 +192,46 @@ Open a PR to [`https://github.com/docker/mcp-registry`](https://github.com/docke
 | :--- | :--- |
 | **`punkpeye/awesome-mcp-servers`** *(Local stdio + MIT client)* | `- [ethereaglehq/privatools-mcp](https://github.com/ethereaglehq/privatools-mcp) 📇 ☁️ 🍎 🪟 🐧 - Privacy-first MCP server for 140+ stateless PDF, image, audio, video, OCR, and document tools via the PrivaTools API. No tracking. MIT-licensed client.` |
 | **`punkpeye/awesome-remote-mcp-servers`** *(Remote Streamable HTTP)* | `- [PrivaTools](https://privatools.me/mcp) (`https://api.privatools.me/mcp`) - Stateless privacy-first PDF, image, document, and media processing tools via PrivaTools API.` |
+
+---
+
+## 10. Anthropic Claude Connectors Directory (`https://claude.ai/directory/manage`)
+
+Sign in with a paid Anthropic account (Pro, Max, Ultra, Team Owner, or Enterprise Owner/Directory role), pre-test `https://api.privatools.me/mcp` as a Custom Connector in Claude.ai, then submit under **Submit new → MCP connector**.
+
+| Field | Exact Value |
+| :--- | :--- |
+| **Portal URL** | `https://claude.ai/directory/manage` |
+| **Server Name (`<= 100` chars)** | `PrivaTools` *(10 chars)* |
+| **Slug** | `privatools` *(permanent once published)* |
+| **Remote MCP Endpoint URL** | `https://api.privatools.me/mcp` *(Streamable HTTP; dual-era MCP `2026-07-28` + legacy `<= 2025-11-25`)* |
+| **Authentication** | None required — works anonymously out of the box for both sync tools and anonymous async jobs (unguessable capability `job_id`s, same per-format limits as sync, `<= 1 h` automatic retention; optional `X-API-Key` unlocks higher keyed quotas) |
+| **One-Liner (`<= 200` chars)** | `Process PDFs, documents, images, audio, video, OCR, and archives via 140+ stateless privacy-first tools. No account or API key needed; files auto-deleted after processing.` *(171 chars)* |
+| **Categories (1–5)** | Primary: `Productivity` · Recommended: `Productivity`, `Developer Tools`, `File Management` / `Document Processing`, `Utilities` |
+| **Documentation URL** | `https://privatools.me/mcp` *(OpenAPI: `https://api.privatools.me/api/v1/openapi.json`)* |
+| **Privacy Policy URL** | `https://privatools.me/privacy` |
+| **Support Contact** | `hello@privatools.me` · `https://privatools.me/support` *(MCP client issues: `https://github.com/ethereaglehq/privatools-mcp/issues`)* |
+| **Icon File** | `docs/listings/assets/icon-512.png` *(`512×512` PNG)* |
+| **Company / Organization** | `PrivaTools` · `https://privatools.me` |
+| **Reads / Writes Separation** | Processes only user-supplied files/params and returns new outputs; never reads or modifies external user accounts. Read-only (`readOnlyHint: true`): `privatools_list_tools`, `privatools_describe_tool`, `privatools_job_status`. Non-destructive execution: `privatools_run_tool`, `privatools_submit_job`. Destructive (`destructiveHint: true`): `privatools_delete_job` only. |
+| **Data Handling** | First-party `api.privatools.me` only; zero ad tracking, zero third-party resale, no AI training on user files, no PHI/HIPAA compliance claims; sync files deleted immediately after each response, remote download links expire in 15 minutes, async job artifacts expire within `<= 1 hour` or immediately via `privatools_delete_job`. Closed-source hosted API with MIT-licensed open-source MCP client (`https://github.com/ethereaglehq/privatools-mcp`). |
+
+**Full Description (`<= 2,000` chars — exact 1,871 chars LF / 1,885 CRLF):**
+
+```text
+PrivaTools gives Claude access to 140+ stateless, privacy-first file tools across PDFs, documents, images, audio, video, OCR, archives, accessibility checks, and QR/barcodes—exposed through 6 compact progressive-discovery tools instead of 200+ schemas.
+
+The 6 tools (strict read/write separation):
+1. privatools_list_tools (read-only): Search operations by keyword, category, or sync/async mode.
+2. privatools_describe_tool (read-only): Inspect upload fields, parameters, size limits, and response media types before running.
+3. privatools_run_tool: Run synchronous operations on HTTPS URLs (up to 500 MiB) or inline base64 (up to 25 MiB decoded). JSON tools (such as accessibility-check and view-exif) return JSON inline; binary outputs return ephemeral 15-minute HTTPS download links.
+4. privatools_submit_job: Submit asynchronous PDF jobs (merge, compress, grayscale, pdf-to-text) with idempotency support.
+5. privatools_job_status (read-only): Poll async job progress and fetch completed download links or JSON results without mutating state.
+6. privatools_delete_job (destructive): Immediately delete a completed job artifact or cancel a running job.
+
+Privacy, access, and openness:
+- No account, OAuth sign-in, or API key required—both synchronous tools and anonymous async jobs work out of the box (anonymous jobs use unguessable capability job_ids with the same per-format limits as sync). Optional X-API-Key unlocks higher keyed quotas.
+- Sync files are deleted immediately after each response. Async artifacts auto-delete within 1 hour, or immediately via privatools_delete_job.
+- First-party processing on api.privatools.me only: zero ad tracking, zero third-party file sharing, and no AI training on user files.
+- Closed-source hosted API; MIT-licensed open-source MCP client at https://github.com/ethereaglehq/privatools-mcp. Docs: https://privatools.me/mcp.
+```

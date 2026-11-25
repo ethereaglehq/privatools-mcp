@@ -44,14 +44,14 @@ Dumping every PrivaTools endpoint into `tools/list` would consume tens of thousa
 | `privatools_list_tools` | Search PrivaTools Operations | `readOnlyHint: true`, `idempotentHint: true` | Search and filter `/api/v1` operations by `query`, `category`, or `mode` (`sync` / `async`), backed by live `/api/v1/operations` (or `/api/v1/openapi.json`) with a bundled offline fallback covering 145 HTTP operations (192 aliases + 37 browser-only = 229 catalog tools). |
 | `privatools_describe_tool` | Inspect PrivaTools Operation Schema | `readOnlyHint: true`, `idempotentHint: true` | Inspect exact endpoint path, HTTP method, upload field names (`file` vs `files` vs named fields), form/query parameters, constraints, cost, async availability, and response media types. |
 | `privatools_run_tool` | Run PrivaTools File Operation | `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true` | Run any synchronous `/api/v1/<operation>` endpoint against local file(s) and parameters. Binary outputs are written directly to disk (never clobbering existing files unless `overwrite: true`) and concise metadata + `X-*` headers are returned; JSON tools (e.g. `accessibility-check`, `view-exif`, `remove-watermark/detect`) return JSON inline. See [OpenAPI spec](https://api.privatools.me/api/v1/openapi.json) and [PrivaTools MCP docs](https://privatools.me/mcp). |
-| `privatools_submit_job` | Submit Async PrivaTools Job | `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true` | Submit an asynchronous background job (`POST /api/v1/jobs`) for heavy/large PDF operations (`merge`, `compress`, `grayscale`, `pdf-to-text`) with automatic `Idempotency-Key` support. |
+| `privatools_submit_job` | Submit Async PrivaTools Job | `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true` | Submit an asynchronous background job (`POST /api/v1/jobs`) for heavy/large PDF operations (`merge`, `compress`, `grayscale`, `pdf-to-text`) with automatic `Idempotency-Key` support. On `https://api.privatools.me/mcp`, anonymous async jobs work without an API key using unguessable capability `job_id`s (same per-format limits as sync, `<= 1 h` retention; optional `X-API-Key` raises quotas). |
 | `privatools_job_status` | Check or Download PrivaTools Job | `readOnlyHint: true`, `idempotentHint: true`, `openWorldHint: true` | Read-only on the server: poll job status (`action: "status"`) or download a completed artifact (`action: "download"`). |
 | `privatools_delete_job` | Delete PrivaTools Async Job | `readOnlyHint: false`, `destructiveHint: true`, `idempotentHint: true`, `openWorldHint: true` | Dedicated destructive tool to immediately delete a completed server-side job artifact or cancel a running job (`DELETE /api/v1/jobs/{job_id}`). |
 
 ## Requirements
 
 - **Node.js 20+** (for local stdio execution via `npx -y @privatools/mcp` or from source)
-- An optional PrivaTools API key from your account on [privatools.me](https://privatools.me) for authenticated higher-quota access
+- **No API key required** on the hosted remote endpoint (`https://api.privatools.me/mcp`) — both synchronous tools and anonymous async jobs work out of the box (unguessable capability `job_id`s, same per-format limits as sync, `<= 1 h` retention); an optional PrivaTools API key (`X-API-Key` / `PRIVATOOLS_API_KEY`) from [privatools.me](https://privatools.me) unlocks higher keyed quotas
 
 ## Setup
 
@@ -227,7 +227,7 @@ Point `PRIVATOOLS_API_URL` at another PrivaTools-compatible `/api/v1` endpoint i
 
 - **Zero local state:** `@privatools/mcp` creates no databases, caches no files on disk, and writes nothing except the output files you explicitly request (or auto-named outputs next to inputs).
 - **Minimal context footprint:** Binary files are streamed to/from local disk rather than base64-encoded into LLM messages; only concise metadata (`output_path`, `bytes`, `media_type`, relevant `X-*` headers) is returned to the model.
-- **Short-lived async artifacts:** Background job results expire within one hour on PrivaTools servers and can be deleted immediately via `privatools_delete_job`.
+- **Short-lived async artifacts:** On `https://api.privatools.me/mcp`, anonymous async jobs work without an API key (scoped by unguessable capability `job_id`s with the same per-format limits as sync; optional `X-API-Key` raises quotas). Background job results expire within one hour on PrivaTools servers and can be deleted immediately via `privatools_delete_job`.
 - **Stdout isolation:** All protocol traffic uses newline-delimited JSON-RPC 2.0 on `stdout`. Diagnostics (when `PRIVATOOLS_MCP_DEBUG=1`) go exclusively to `stderr`, and `PRIVATOOLS_API_KEY` is never logged or echoed in error payloads.
 - **Full privacy policy:** [https://privatools.me/privacy](https://privatools.me/privacy)
 

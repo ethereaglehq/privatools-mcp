@@ -18,7 +18,8 @@
 | **Docs URL** | `https://privatools.me/mcp` |
 | **Privacy Policy URL** | `https://privatools.me/privacy` |
 | **Security Policy URL** | `https://privatools.me/security` |
-| **Support URL** | `https://github.com/ethereaglehq/privatools-mcp/issues` |
+| **Support Contact** | `hello@privatools.me` · `https://privatools.me/support` |
+| **Support URL (MCP Issues)** | `https://github.com/ethereaglehq/privatools-mcp/issues` |
 | **Source Repository (MCP Client)** | `https://github.com/ethereaglehq/privatools-mcp` |
 | **OpenAPI Reference** | `https://api.privatools.me/api/v1/openapi.json` |
 
@@ -55,7 +56,7 @@ Instead of flooding an agent's context window with tens of thousands of tokens o
 1. **`privatools_list_tools`** *(read-only)* — Search and filter `/api/v1` operations by keyword (`query`), `category`, or execution `mode` (`sync` / `async`), backed by the live `/api/v1/operations` catalog with a bundled offline fallback.
 2. **`privatools_describe_tool`** *(read-only)* — Inspect exact endpoint path, HTTP method, multipart upload field names, parameters, constraints, cost units, async support, and response media types before running an operation.
 3. **`privatools_run_tool`** *(sync execution)* — Execute any synchronous `/api/v1/<operation>` endpoint against local file(s) and parameters. Binary outputs stream directly to local disk (never clobbering existing files unless `overwrite: true`) and return concise metadata + `X-*` headers instead of base64 blobs; JSON-returning tools (`accessibility-check`, `view-exif`, `remove-watermark/detect`, etc.) return JSON inline.
-4. **`privatools_submit_job`** *(async submit)* — Submit asynchronous background jobs (`POST /api/v1/jobs`) for heavy PDF workloads (`merge`, `compress`, `grayscale`, `pdf-to-text`) with automatic `Idempotency-Key` support.
+4. **`privatools_submit_job`** *(async submit)* — Submit asynchronous background jobs (`POST /api/v1/jobs`) for heavy PDF workloads (`merge`, `compress`, `grayscale`, `pdf-to-text`) with automatic `Idempotency-Key` support. On the hosted remote endpoint (`https://api.privatools.me/mcp`), anonymous async jobs work without an API key using unguessable capability `job_id`s, the same per-format limits as sync, and `<= 1 hour` automatic retention (optional `X-API-Key` unlocks higher keyed quotas).
 5. **`privatools_job_status`** *(strictly read-only)* — Poll job progress (`action: "status"`) or download completed artifacts (`action: "download"`). Never mutates or deletes server-side state.
 6. **`privatools_delete_job`** *(destructive)* — Immediately delete a completed server-side job artifact or cancel a running asynchronous job (`destructiveHint: true`).
 
@@ -71,7 +72,7 @@ Instead of flooding an agent's context window with tens of thousands of tokens o
 ### Deployment Options & Architecture
 
 - **Zero-dependency Local Stdio (`@privatools/mcp`):** Pure Node.js (`>= 20`) ESM with zero external runtime packages, optional filesystem sandboxing (`PRIVATOOLS_MCP_ALLOWED_DIRS` enforced via `fs.realpath`), and support for pointing `PRIVATOOLS_API_URL` at another PrivaTools-compatible endpoint.
-- **Hosted Remote Streamable HTTP (`https://api.privatools.me/mcp`):** Stateless HTTPS MCP endpoint with no local runtime required.
+- **Hosted Remote Streamable HTTP (`https://api.privatools.me/mcp`):** Stateless HTTPS MCP endpoint with no local runtime, account, or API key required—both synchronous tools and anonymous async jobs work out of the box (optional `X-API-Key` raises quotas).
 - **MIT-Licensed MCP Client & Container:** The `@privatools/mcp` client (`ethereaglehq/privatools-mcp`) and standalone MCP container image (`ghcr.io/ethereaglehq/privatools-mcp`) are published under the MIT License.
 
 ---
@@ -107,13 +108,13 @@ Use this verbatim (or lightly condensed for field length limits) on every market
 ### 2. Retention & Auto-Deletion
 
 - **Synchronous operations (`/api/v1/*` via `privatools_run_tool`):** Uploaded inputs and generated outputs exist only in isolated server temporary storage for the duration of the HTTP request and are **deleted immediately after the response is sent**. A background cleanup janitor sweeps any orphaned temporary files from interrupted/timed-out requests.
-- **Asynchronous jobs (`/api/v1/jobs` via `privatools_submit_job`):** Completed job artifacts are retained for **at most 1 hour after completion** to support polling and repeat downloads, then automatically purged. Callers may delete artifacts immediately via `privatools_delete_job`.
+- **Asynchronous jobs (`/api/v1/jobs` via `privatools_submit_job`):** Work anonymously on `https://api.privatools.me/mcp` without an API key (scoped by unguessable capability `job_id`s with the same per-format limits as sync) as well as with an optional `X-API-Key` for higher keyed quotas. Completed job artifacts are retained for **at most 1 hour after completion** to support polling and repeat downloads, then automatically purged. Callers may delete artifacts immediately via `privatools_delete_job`.
 - **Logging & Third Parties:** PrivaTools never passes uploaded files to third parties and never uses user files for AI model training. Server access logs record only HTTP method, path template, status code, and duration—never file contents, filenames, or query strings.
 
 ### 3. Accounts, API Keys & License
 
-- **No account required** for basic usage on the hosted API.
-- **Optional API key** (`PRIVATOOLS_API_KEY` / `X-API-Key`) for authenticated higher-quota access on `privatools.me` (OAuth 2.1 support is tracked for Anthropic Claude Connectors Directory and OpenAI Plugin Directory authenticated modes).
+- **No account required** for synchronous processing or anonymous async jobs on the hosted remote MCP endpoint (`https://api.privatools.me/mcp`).
+- **Optional API key** (`PRIVATOOLS_API_KEY` / `X-API-Key`) unlocks higher keyed quotas on `privatools.me`.
 - **MCP Client License:** The `@privatools/mcp` client is released under the [MIT License](https://github.com/ethereaglehq/privatools-mcp/blob/main/LICENSE).
 - **Full Privacy Policy:** [https://privatools.me/privacy](https://privatools.me/privacy)
 - **Security Policy:** [https://privatools.me/security](https://privatools.me/security)

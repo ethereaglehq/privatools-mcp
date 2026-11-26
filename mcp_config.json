@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "privatools": {
+      "url": "https://api.privatools.me/mcp"
+    }
+  }
+}

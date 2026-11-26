@@ -1,0 +1,31 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "privatools",
+  "displayName": "PrivaTools",
+  "version": "0.1.0",
+  "description": "Privacy-first PDF, image, document, OCR, and media tools via the PrivaTools API (closed-source app, MIT-licensed MCP client). 140+ stateless operations.",
+  "logo": "assets/logo.png",
+  "suggestedPrompts": [
+    "List the PDF processing operations available in PrivaTools, including which ones support async jobs",
+    "Describe the parameters, limits, and output format for the PrivaTools compress and accessibility-check operations",
+    "Run PrivaTools accessibility-check on a public PDF URL and summarize any accessibility issues found"
+  ],
+  "author": {
+    "name": "PrivaTools",
+    "url": "https://privatools.me"
+  },
+  "homepage": "https://privatools.me/mcp",
+  "repository": "https://github.com/ethereaglehq/privatools-mcp",
+  "license": "MIT",
+  "keywords": [
+    "privatools",
+    "pdf",
+    "image",
+    "document",
+    "ocr",
+    "accessibility",
+    "media",
+    "file-processing",
+    "mcp"
+  ]
+}

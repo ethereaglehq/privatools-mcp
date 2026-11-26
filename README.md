@@ -2,6 +2,8 @@
 
 A zero-dependency, stateless, dual-era [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server for the [PrivaTools](https://privatools.me) `/api/v1` file-processing API — giving AI assistants access to 140+ privacy-first PDF, document, image, audio, video, OCR, archive, and accessibility tools through 6 progressive-discovery tools.
 
+PrivaTools itself is a closed-source web and API application; this `@privatools/mcp` client repository (including its Antigravity plugin, Gemini CLI extension, and MCPB manifest) is open source under the MIT License.
+
 Built on pure Node.js (`>= 20`) ESM built-ins (`fs`, `path`, `fetch`, `FormData`, `Blob`, `crypto`) with **zero external runtime dependencies**, keeping the npm, OCI, and `.mcpb` supply-chain footprint minimal.
 
 - **Docs & setup guide:** [privatools.me/mcp](https://privatools.me/mcp) · **OpenAPI spec:** [api.privatools.me/api/v1/openapi.json](https://api.privatools.me/api/v1/openapi.json)
@@ -26,6 +28,7 @@ Built on pure Node.js (`>= 20`) ESM built-ins (`fs`, `path`, `fetch`, `FormData`
 - **awesome-mcp-servers:** [`punkpeye/awesome-mcp-servers#20670`](https://github.com/punkpeye/awesome-mcp-servers/pull/20670)
 - **awesome-remote-mcp-servers:** [`punkpeye/awesome-remote-mcp-servers#5880`](https://github.com/punkpeye/awesome-remote-mcp-servers/pull/5880)
 - **Docker MCP Catalog:** [`docker/mcp-registry#7686`](https://github.com/docker/mcp-registry/pull/7686)
+- **Google Antigravity Marketplace:** plugin packaged (`plugin.json` + `mcp_config.json` + `assets/logo.png`, partner intake pending)
 
 ## Protocol Support (Dual-Era MCP `2026-07-28` + Legacy `<= 2025-11-25`)
 
@@ -170,6 +173,45 @@ Use the one-click badges at the top of this README or add `.vscode/mcp.json`:
 ```
 
 For remote Streamable HTTP in VS Code, set `"type": "http"` and `"url": "https://api.privatools.me/mcp"`.
+
+### Google Antigravity
+
+This repository is packaged as a native Antigravity plugin (`plugin.json`, `mcp_config.json`, `assets/logo.png`) connecting to the hosted Streamable HTTP endpoint (`https://api.privatools.me/mcp`, no account or API key required).
+
+Install directly from GitHub with the Antigravity CLI (`agy`):
+
+```bash
+agy plugin install https://github.com/ethereaglehq/privatools-mcp
+```
+
+Or add the remote Streamable HTTP server directly in `~/.gemini/config/mcp_config.json` (global) or `<workspace>/.agents/mcp_config.json` (project):
+
+```json
+{
+  "mcpServers": {
+    "privatools": {
+      "url": "https://api.privatools.me/mcp"
+    }
+  }
+}
+```
+
+If you need direct local filesystem reads and writes (with optional `PRIVATOOLS_MCP_ALLOWED_DIRS` sandboxing) instead of the hosted remote endpoint, configure the MIT-licensed local stdio client (`npx -y @privatools/mcp`) in `mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "privatools": {
+      "command": "npx",
+      "args": ["-y", "@privatools/mcp"],
+      "env": {
+        "PRIVATOOLS_API_KEY": "YOUR_OPTIONAL_API_KEY",
+        "PRIVATOOLS_MCP_ALLOWED_DIRS": "/path/to/workspace"
+      }
+    }
+  }
+}
+```
 
 ### Gemini CLI
 
